@@ -1,7 +1,7 @@
 const aws = require('aws-sdk');
 const stepfunctions = new aws.StepFunctions();
 
-exports = (main) => {
+module.exports = (main) => {
   return async ({TaskToken: taskToken, ...event}) => {
       let params = {
           taskToken: taskToken
