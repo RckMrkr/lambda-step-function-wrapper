@@ -33,10 +33,8 @@ const createApolloClient = async (ApolloClient, shop) => {
 }
 
 const stepFunctionWrapper = (main) => {
-  return async ({TaskToken: taskToken, shop, ...event}) => {
-      let params = {
-          taskToken: taskToken
-      };
+  return async ({TaskToken: taskToken, Input: {shop, ...event}}) => {
+      let params = { taskToken };
       
       try{
           const responseObject = JSON.stringify(await main(event, shop));
