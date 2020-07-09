@@ -43,7 +43,10 @@ const stepFunctionWrapper = (main) => {
           params.output = JSON.stringify({...responseObject, shop})
           await stepfunctions.sendTaskSuccess(params).promise();
       } catch(error) {
-          params.output = error.message;
+          console.error(error);
+          params.error = JSON.stringify(error);
+          params.cause = JSON.stringify(error.message);
+
           await stepfunctions.sendTaskFailure(params).promise();
       }
   };
