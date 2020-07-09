@@ -1,9 +1,8 @@
 const aws = require('aws-sdk');
-const mysql = require('mysql2/promise');
 
 const stepfunctions = new aws.StepFunctions();
 
-const getAccessToken = async (shop) => {
+const getAccessToken = async (shop, mysql) => {
     const connection = await mysql.createConnection({
         host: process.env.MYSQL_HOSTNAME,
         password: process.env.MYSQL_PASSWORD,
@@ -17,8 +16,8 @@ const getAccessToken = async (shop) => {
 
 
 
-const createApolloClient = async (ApolloImport, shop) => {
-    const accessToken = await getAccessToken(shop);
+const createApolloClient = async (ApolloImport, mysql, shop) => {
+    const accessToken = await getAccessToken(shop, mysql);
     
     return new ApolloImport.default({
         uri: `https://${shop}/admin/api/2020-07/graphql.json`,
