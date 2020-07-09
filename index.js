@@ -17,10 +17,10 @@ const getAccessToken = async (shop) => {
 
 
 
-const createApolloClient = async (ApolloClient, shop) => {
+const createApolloClient = async (ApolloImport, shop) => {
     const accessToken = await getAccessToken(shop);
     
-    return new ApolloClient({
+    return new ApolloImport.default({
         uri: `https://${shop}/admin/api/2020-07/graphql.json`,
         request: operation => {
             operation.setContext({
@@ -37,7 +37,7 @@ const stepFunctionWrapper = (main) => {
       let params = { taskToken };
       
       try{
-          const responseObject = JSON.stringify(await main(event, shop));
+          const responseObject = await main(event, shop);
           params.output = JSON.stringify({...responseObject, shop})
           await stepfunctions.sendTaskSuccess(params).promise();
       } catch(error) {
