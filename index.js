@@ -39,7 +39,10 @@ class StepFunctionError extends Error {
 }
 
 const stepFunctionWrapper = (main) => {
-    return async ({ TaskToken: taskToken, Input: { shop, ...event } }) => {
+    return async ({ TaskToken: taskToken, Input: { shop, Cause, ...event } }) => {
+        if(Cause){
+            shop = JSON.parse(Cause).shop;
+        }
         let params = { taskToken };
 
         try {
@@ -50,7 +53,7 @@ const stepFunctionWrapper = (main) => {
             console.error(error);
             if (error instanceof StepFunctionError) {
                 params.error = error.data.errorName;
-                params.cause = error.data.cause;
+                params.cause = JSON.stringify({shop});
             } else {
                 params.error = JSON.stringify(error);
                 params.cause = JSON.stringify(error.message);
