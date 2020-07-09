@@ -8,9 +8,9 @@ const getAccessToken = async (shop, mysql) => {
         password: process.env.MYSQL_PASSWORD,
         user: process.env.MYSQL_USERNAME,
         database: process.env.MYSQL_DATABASE
-      });
+    });
     const [rows] = await connection.execute('SELECT token from `access_tokens` where shop = ? LIMIT 1', [shop])
-    
+
     return (rows && rows[0] && rows[0].token) || null
 }
 
@@ -18,7 +18,7 @@ const getAccessToken = async (shop, mysql) => {
 
 const createApolloClient = async (ApolloImport, mysql, shop) => {
     const accessToken = await getAccessToken(shop, mysql);
-    
+
     return new ApolloImport.default({
         uri: `https://${shop}/admin/api/2020-07/graphql.json`,
         request: operation => {
@@ -31,25 +31,37 @@ const createApolloClient = async (ApolloImport, mysql, shop) => {
     });
 }
 
-const stepFunctionWrapper = (main) => {
-  return async ({TaskToken: taskToken, Input: {shop, ...event}}) => {
-      let params = { taskToken };
-      
-      try{
-          const responseObject = await main(event, shop);
-          params.output = JSON.stringify({...responseObject, shop})
-          await stepfunctions.sendTaskSuccess(params).promise();
-      } catch(error) {
-          console.error(error);
-          params.error = JSON.stringify(error);
-          params.cause = JSON.stringify(error.message);
+class StepFunctionError extends Error {
+    constructor(message, data) {
+        super(message)
+        this.data = data;
+    }
+}
 
-          await stepfunctions.sendTaskFailure(params).promise();
-      }
-  };
+const stepFunctionWrapper = (main) => {
+    return async ({ TaskToken: taskToken, Input: { shop, ...event } }) => {
+        let params = { taskToken };
+
+        try {
+            const responseObject = await main(event, shop);
+            params.output = JSON.stringify({ ...responseObject, shop })
+            await stepfunctions.sendTaskSuccess(params).promise();
+        } catch (error) {
+            console.error(error);
+            if (error instanceof StepFunctionError) {
+                params.error = error.data.errorName;
+                params.cause = error.data.cause;
+            } else {
+                params.error = JSON.stringify(error);
+                params.cause = JSON.stringify(error.message);
+            }
+            await stepfunctions.sendTaskFailure(params).promise();
+        }
+    };
 };
 
 module.exports = {
     stepFunctionWrapper,
     createApolloClient,
+    StepFunctionError,
 }
