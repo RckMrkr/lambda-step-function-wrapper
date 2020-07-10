@@ -2,22 +2,15 @@ const aws = require('aws-sdk');
 
 const stepfunctions = new aws.StepFunctions();
 
-const getAccessToken = async (shop, mysql) => {
-    const connection = await mysql.createConnection({
-        host: process.env.MYSQL_HOSTNAME,
-        password: process.env.MYSQL_PASSWORD,
-        user: process.env.MYSQL_USERNAME,
-        database: process.env.MYSQL_DATABASE
-    });
-    const [rows] = await connection.execute('SELECT token from `access_tokens` where shop = ? LIMIT 1', [shop])
-
+const getAccessToken = async (shop, connectionPool) => {
+    const [rows] = await connectionPool.execute('SELECT token from `access_tokens` where shop = ? LIMIT 1', [shop])
     return (rows && rows[0] && rows[0].token) || null
 }
 
 
 
-const createApolloClient = async (ApolloImport, mysql, shop) => {
-    const accessToken = await getAccessToken(shop, mysql);
+const createApolloClient = async (ApolloImport, connectionPool, shop) => {
+    const accessToken = await getAccessToken(shop, connectionPool);
 
     return new ApolloImport.default({
         uri: `https://${shop}/admin/api/2020-07/graphql.json`,
